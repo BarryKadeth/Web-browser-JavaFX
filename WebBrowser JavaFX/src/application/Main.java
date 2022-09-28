@@ -1,28 +1,45 @@
 package application;
 	
+import java.io.OutputStreamWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+
 import javafx.animation.KeyFrame;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
+import javafx.concurrent.Worker.State;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.print.PrinterJob;
 import javafx.stage.Stage;
 import javafx.scene.ImageCursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ColorPicker;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -45,6 +62,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Box;
+import javafx.scene.shape.Circle;
+import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebHistory;
 import javafx.scene.web.WebView;
 
@@ -109,13 +128,14 @@ public class Main extends Application {
 			MenuItem historySettings = new MenuItem ("History");
 			MenuItem bookmarkSettings = new MenuItem ("Bookmarks");
 			MenuItem blockWebsiteSettings = new MenuItem ("Block Page");
+			MenuItem printSettings = new MenuItem ("Print Page");
 			MenuItem yellowSettings = new MenuItem ("Yellow Theme");
 			MenuItem blueSettings = new MenuItem ("Blue Theme");
 			MenuItem purpleSettings = new MenuItem ("Purple Theme");
 			MenuItem whiteSettings = new MenuItem ("White Theme");
 			
 			MenuButton settings = new MenuButton("Settings",null,zoomInSettings,zoomOutSettings,homeSettings,
-					historySettings,bookmarkSettings,blockWebsiteSettings,yellowSettings,
+					historySettings,bookmarkSettings,blockWebsiteSettings,printSettings,yellowSettings,
 					blueSettings,purpleSettings,whiteSettings);
 			
 			
@@ -132,11 +152,6 @@ public class Main extends Application {
 			
 			//WebView manages the visual representation of a web page
 			webView = new WebView();
-			
-			
-			
-			
-			
 			
 			//Event handler for settings 
 			zoomInSettings.setOnAction(new EventHandler<ActionEvent>() {
@@ -210,30 +225,65 @@ public class Main extends Application {
 				
 				@Override
 				public void handle (ActionEvent arg0) {
+					
+					
 					//Check if search is http, www. or just a search
 					//next time, if there is a space in there, just search it via google.
 					String URLText = getTextField().getText();
 					Boolean safeWebsite = true;
 					TextInputDialog passwordEntry = new TextInputDialog ();
-					
+					String warningText = "";
 					
 					for (Map.Entry<String,String> entry : parentalWebsites.entrySet()) {
 						String parentalURL = entry.getKey();
+		
 						if (URLText.contains(parentalURL)) {
 							safeWebsite = false;
 							System.out.println("Not safe website");
+							warningText = "Website blocked due to: " + entry.getValue() + ". Enter password to enter site";
 							passwordEntry.setHeaderText("Website blocked due to: " + entry.getValue() + ". Enter password to enter site");
 							break;
 						}
 					}
 					//open url of math learning website instead 
 					if (!safeWebsite) {
-						passwordEntry.showAndWait();
-						if (passwordEntry.getEditor().getText().equals("parental lock")) {
-							safeWebsite = true;
-						} else {
-							getWebView().getEngine().load("https://www.khanacademy.org");
-						}
+						
+						
+						
+				    	//https://stackoverflow.com/questions/53825323/javafx-textinputdialog-for-password-masking
+				    	 Dialog<String> dialog = new Dialog<>();
+				    	    dialog.setTitle("Parental Protected Website");
+				    	    dialog.setHeaderText(warningText);
+				    	    dialog.setGraphic(new Circle(15, Color.RED)); // Custom graphic
+				    	    dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+				    	    PasswordField pwd = new PasswordField();
+				    	    HBox content = new HBox();
+				    	    content.setAlignment(Pos.CENTER_LEFT);
+				    	    content.setSpacing(10);
+				    	    content.getChildren().addAll(new Label("Please enter your password to confirm"), pwd);
+				    	    dialog.getDialogPane().setContent(content);
+				    	    dialog.setResultConverter(dialogButton -> {
+				    	        if (dialogButton == ButtonType.OK) {
+				    	            return pwd.getText();
+				    	        }
+				    	        return null;
+				    	    });
+				    	    
+				    	    Optional<String> result = dialog.showAndWait();
+				    	    if (result.get().equals("parental lock")) {
+				    	        safeWebsite = true;
+				    	    } else {
+				    	    	getWebView().getEngine().load("https://www.khanacademy.org");
+				    	    }
+						
+						//this was previous way and did not hide the entered password
+//						passwordEntry.showAndWait();
+//						if (passwordEntry.getEditor().getText().equals("parental lock")) {
+//							safeWebsite = true;
+//						} else {
+//							getWebView().getEngine().load("https://www.khanacademy.org");
+//						}
 					}
 					
 					if (URLText.contains(" ") && safeWebsite) {
@@ -387,10 +437,25 @@ public class Main extends Application {
 			    		String blockReason = blockWebsiteEntry.getEditor().getText();
 			    		String bookmarkURL = getWebView().getEngine().getLocation();
 			    		parentalWebsites.put(bookmarkURL,blockReason);
-			    	}
+			    	}		    	
 			    }
 			});
 			
+			//Printing page URL from java doc https://docs.oracle.com/javase/8/javafx/api/javafx/print/PrinterJob.html
+			printSettings.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle (ActionEvent arg0) {
+					 System.out.println("To Printer!");
+			            PrinterJob job = PrinterJob.createPrinterJob();
+			            if(job != null){
+			            job.showPrintDialog(primaryStage); 
+			            job.printPage(webView);
+			            job.endJob();
+					}
+					
+				}
+			});
+					
 			//Pressing the ColourSettings button
 			yellowSettings.setOnAction(new EventHandler<ActionEvent>() {
 				@Override
@@ -447,7 +512,7 @@ public class Main extends Application {
 					stage.getIcons().add(starImage);
 					stage.setScene(new Scene(scrollPane,400,200));
 					stage.show();
-					
+		
 				}
 			});
 			

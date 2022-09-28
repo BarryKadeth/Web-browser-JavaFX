@@ -15,6 +15,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
+import javafx.scene.ImageCursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ColorPicker;
@@ -62,6 +63,8 @@ public class Main extends Application {
 	
 	public static HashMap<Date,String> userHistory = new HashMap<Date,String>();
 	public static HashMap<String,String> savedBookmarks = new HashMap<String,String>();
+	//parentalWebsites String,String is URL, reason for protection 
+	public static HashMap<String,String> parentalWebsites = new HashMap<String,String>();
 	
 	public static TabPane tabPane = new TabPane();
 	
@@ -72,7 +75,8 @@ public class Main extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-
+			
+			Scene scene;
 			tabPane.getStyleClass().add("floating");
 			tabPane.setTabMinWidth(30);
 			tabPane.setTabMinHeight(20);
@@ -80,6 +84,9 @@ public class Main extends Application {
 			Button tabs = new Button();
 		    tabs.setGraphic(new ImageView(plus1Image));
 			HBox hBoxTabs = new HBox(tabPane);
+			
+			//Creates protected parental website list
+			createListOfParentalWebsites();
 			
 		//URL text field and button to load web pages
 			Button launch = new Button();
@@ -100,12 +107,13 @@ public class Main extends Application {
 			MenuItem zoomOutSettings = new MenuItem ("Zoom Out");
 			MenuItem historySettings = new MenuItem ("History");
 			MenuItem bookmarkSettings = new MenuItem ("Bookmarks");
+			MenuItem blockWebsiteSettings = new MenuItem ("block website");
 			MenuItem yellowSettings = new MenuItem ("Yellow Theme");
 			MenuItem blueSettings = new MenuItem ("Blue Theme");
 			MenuItem purpleSettings = new MenuItem ("Purple Theme");
 			MenuItem whiteSettings = new MenuItem ("White Theme");
 			
-			MenuButton settings = new MenuButton("Settings",null,zoomInSettings,zoomOutSettings,historySettings,bookmarkSettings,yellowSettings,
+			MenuButton settings = new MenuButton("Settings",null,zoomInSettings,zoomOutSettings,historySettings,bookmarkSettings,blockWebsiteSettings,yellowSettings,
 					blueSettings,purpleSettings,whiteSettings);
 			
 			
@@ -202,8 +210,28 @@ public class Main extends Application {
 					//Check if search is http, www. or just a search
 					//next time, if there is a space in there, just search it via google.
 					String URLText = getTextField().getText();
-				//	textField.clear();
-					if (URLText.contains(" ")) {
+					Boolean safeWebsite = true;
+					TextInputDialog passwordEntry = new TextInputDialog ();
+					passwordEntry.setHeaderText("Enter password to enter site");
+					
+					for (Map.Entry<String,String> entry : parentalWebsites.entrySet()) {
+						String parentalURL = entry.getKey();
+						if (URLText.contains(parentalURL)) {
+							safeWebsite = false;
+							System.out.println("Not safe website");
+						}
+					}
+					//open url of math learning website instead 
+					if (!safeWebsite) {
+						passwordEntry.showAndWait();
+						if (passwordEntry.getEditor().getText().equals("parental lock")) {
+							safeWebsite = true;
+						} else {
+							getWebView().getEngine().load("https://www.khanacademy.org");
+						}
+					}
+					
+					if (URLText.contains(" ") && safeWebsite) {
 						String[] searchWords = URLText.split(" ");
 						int searchWordsSize = searchWords.length;
 						URLText = "https://www.google.com/search?q=";
@@ -211,12 +239,12 @@ public class Main extends Application {
 							URLText = URLText + searchWords[i] + "+";
 						}
 						getWebView().getEngine().load(URLText);
-					} else if (URLText.contains("http")) {
+					} else if (URLText.contains("http") && safeWebsite) {
 						getWebView().getEngine().load(URLText);
-					} else if (URLText.contains("www")) {
+					} else if (URLText.contains("www") && safeWebsite) {
 						URLText = "https://" + URLText;
 						getWebView().getEngine().load(URLText);
-					} else {
+					} else if (safeWebsite) {
 						URLText = "https://www.google.com/search?q=" + URLText;
 						getWebView().getEngine().load(URLText);
 						
@@ -226,31 +254,52 @@ public class Main extends Application {
 			
 		//Pressing launch button
 			launch.setOnAction(new EventHandler<ActionEvent>() {
-				
 				@Override
 				public void handle (ActionEvent arg0) {
 					//Check if search is http, www. or just a search
-					String URLText = textField.getText();
-				//	textField.clear();
-					if (URLText.contains(" ")) {
+					//next time, if there is a space in there, just search it via google.
+					String URLText = getTextField().getText();
+					Boolean safeWebsite = true;
+					TextInputDialog passwordEntry = new TextInputDialog ();
+					passwordEntry.setHeaderText("Enter password to enter site");
+					
+					for (Map.Entry<String,String> entry : parentalWebsites.entrySet()) {
+						String parentalURL = entry.getKey();
+						if (URLText.contains(parentalURL)) {
+							safeWebsite = false;
+							System.out.println("Not safe website");
+						}
+					}
+					//open url of math learning website instead 
+					if (!safeWebsite) {
+						passwordEntry.showAndWait();
+						if (passwordEntry.getEditor().getText().equals("parental lock")) {
+							safeWebsite = true;
+						} else {
+							getWebView().getEngine().load("https://www.khanacademy.org");
+						}
+					}
+					
+					if (URLText.contains(" ") && safeWebsite) {
 						String[] searchWords = URLText.split(" ");
 						int searchWordsSize = searchWords.length;
 						URLText = "https://www.google.com/search?q=";
 						for (int i = 0; i < searchWordsSize; i++) {
 							URLText = URLText + searchWords[i] + "+";
 						}
-						webView.getEngine().load(URLText);
-					} else if (URLText.contains("http")) {
-						webView.getEngine().load(URLText);
-					} else if (URLText.contains("www")) {
+						getWebView().getEngine().load(URLText);
+					} else if (URLText.contains("http") && safeWebsite) {
+						getWebView().getEngine().load(URLText);
+					} else if (URLText.contains("www") && safeWebsite) {
 						URLText = "https://" + URLText;
-						webView.getEngine().load(URLText);
-					} else {
+						getWebView().getEngine().load(URLText);
+					} else if (safeWebsite) {
 						URLText = "https://www.google.com/search?q=" + URLText;
-						webView.getEngine().load(URLText);
+						getWebView().getEngine().load(URLText);
 						
 					}
 				}
+
 			});
 			
 			//Pressing the zoomIn button
@@ -301,14 +350,30 @@ public class Main extends Application {
 						
 					}
 					scrollPane.setContent(vBox);
-					
-					
+
 					stage.setTitle("Website History");
 					stage.getIcons().add(starImage);
 					stage.setScene(new Scene(scrollPane,600,200));
 					stage.show();
 					
 				}
+			});
+	
+			//blocking a site
+			TextInputDialog blockWebsiteEntry = new TextInputDialog("");
+			blockWebsiteEntry.setHeaderText("Reason for blocking website");
+			
+			blockWebsiteSettings.setOnAction(new EventHandler<ActionEvent>() {
+			    @Override
+			    public void handle(ActionEvent event) {
+			    	
+			    	Optional<String> result = blockWebsiteEntry.showAndWait();
+			    	if (result.isPresent()) {
+			    		String blockReason = blockWebsiteEntry.getEditor().getText();
+			    		String bookmarkURL = getWebView().getEngine().getLocation();
+			    		parentalWebsites.put(bookmarkURL,blockReason);
+			    	}
+			    }
 			});
 			
 			//Pressing the ColourSettings button
@@ -421,8 +486,10 @@ public class Main extends Application {
 			VBox.setVgrow(getWebView(), Priority.ALWAYS);
 			HBox.setHgrow(getTextField(), Priority.ALWAYS);
 			
+			scene = new Scene(hBoxTabs);
 			
-			primaryStage.setScene(new Scene(hBoxTabs));
+			
+			primaryStage.setScene(scene);
 			
 			
 			//Title and icon of web browser
@@ -472,6 +539,12 @@ public class Main extends Application {
  
     }
 	
+	public static void createListOfParentalWebsites() {
+		parentalWebsites.put("www.crazygames.com","Gaming");
+		parentalWebsites.put("www.poki.com","Gaming");
+		parentalWebsites.put("www.instagram.com","Social Media");
+		System.out.println(parentalWebsites);
+	}
 
 	
 	

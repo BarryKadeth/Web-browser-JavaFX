@@ -9,6 +9,7 @@ import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.scene.ImageCursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -295,7 +296,7 @@ public class NewTab extends Tab {
 		yellowSettings.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle (ActionEvent arg0) {
-				Main.tabPane.setBackground(new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY)));				
+				Main.tabPane.setBackground(new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
 			}
 		});
 		blueSettings.setOnAction(new EventHandler<ActionEvent>() {

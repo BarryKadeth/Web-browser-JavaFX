@@ -105,15 +105,17 @@ public class Main extends Application {
 			
 			MenuItem zoomInSettings = new MenuItem ("Zoom In");
 			MenuItem zoomOutSettings = new MenuItem ("Zoom Out");
+			MenuItem homeSettings = new MenuItem ("Set Home Page");
 			MenuItem historySettings = new MenuItem ("History");
 			MenuItem bookmarkSettings = new MenuItem ("Bookmarks");
-			MenuItem blockWebsiteSettings = new MenuItem ("block website");
+			MenuItem blockWebsiteSettings = new MenuItem ("Block Page");
 			MenuItem yellowSettings = new MenuItem ("Yellow Theme");
 			MenuItem blueSettings = new MenuItem ("Blue Theme");
 			MenuItem purpleSettings = new MenuItem ("Purple Theme");
 			MenuItem whiteSettings = new MenuItem ("White Theme");
 			
-			MenuButton settings = new MenuButton("Settings",null,zoomInSettings,zoomOutSettings,historySettings,bookmarkSettings,blockWebsiteSettings,yellowSettings,
+			MenuButton settings = new MenuButton("Settings",null,zoomInSettings,zoomOutSettings,homeSettings,
+					historySettings,bookmarkSettings,blockWebsiteSettings,yellowSettings,
 					blueSettings,purpleSettings,whiteSettings);
 			
 			
@@ -133,9 +135,6 @@ public class Main extends Application {
 			
 			
 			
-			//Pop up box for adding a bookmark
-			TextInputDialog bookmarkEntry = new TextInputDialog("Bookmark Title");
-			bookmarkEntry.setHeaderText("Enter the Title of bookmark");
 			
 			
 			
@@ -155,9 +154,13 @@ public class Main extends Application {
 
 			
 			bookmarkButton.setOnAction(new EventHandler<ActionEvent>() {
-			    @Override
+			    
+				@Override
 			    public void handle(ActionEvent event) {
-			    	
+					//Pop up box for adding a bookmark
+					TextInputDialog bookmarkEntry = new TextInputDialog("Bookmark Title");
+					bookmarkEntry.setHeaderText("Enter the Title of bookmark");
+					
 			    	Optional<String> result = bookmarkEntry.showAndWait();
 			    	if (result.isPresent()) {
 			    		String bookmarkTitle = bookmarkEntry.getEditor().getText();
@@ -212,13 +215,15 @@ public class Main extends Application {
 					String URLText = getTextField().getText();
 					Boolean safeWebsite = true;
 					TextInputDialog passwordEntry = new TextInputDialog ();
-					passwordEntry.setHeaderText("Enter password to enter site");
+					
 					
 					for (Map.Entry<String,String> entry : parentalWebsites.entrySet()) {
 						String parentalURL = entry.getKey();
 						if (URLText.contains(parentalURL)) {
 							safeWebsite = false;
 							System.out.println("Not safe website");
+							passwordEntry.setHeaderText("Website blocked due to: " + entry.getValue() + ". Enter password to enter site");
+							break;
 						}
 					}
 					//open url of math learning website instead 
@@ -261,13 +266,15 @@ public class Main extends Application {
 					String URLText = getTextField().getText();
 					Boolean safeWebsite = true;
 					TextInputDialog passwordEntry = new TextInputDialog ();
-					passwordEntry.setHeaderText("Enter password to enter site");
+					
 					
 					for (Map.Entry<String,String> entry : parentalWebsites.entrySet()) {
 						String parentalURL = entry.getKey();
 						if (URLText.contains(parentalURL)) {
 							safeWebsite = false;
 							System.out.println("Not safe website");
+							passwordEntry.setHeaderText("Website blocked due to: " + entry.getValue() + ". Enter password to enter site");
+							break;
 						}
 					}
 					//open url of math learning website instead 
@@ -317,6 +324,14 @@ public class Main extends Application {
 				public void handle (ActionEvent arg0) {
 					getWebView().setZoom(getWebView().getZoom()-0.25);
 					
+				}
+			});
+			
+			//Setting a new home page 
+			homeSettings.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle (ActionEvent arg0) {
+					homeURL = getWebView().getEngine().getLocation();					
 				}
 			});
 
